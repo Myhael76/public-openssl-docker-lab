@@ -126,7 +126,7 @@ generateP12PrivateKeyStore(){
         -in ${LAB_OUT_FOLDER}/server_${1}/public.crt.pem \
         -inkey ${LAB_OUT_FOLDER}/server_${1}/private.key.pem \
         -passin pass:"${LAB_PASSPHRASE}" \
-        -out ${LAB_OUT_FOLDER}/server_${1}/public.key.store.p12  \
+        -out ${LAB_OUT_FOLDER}/server_${1}/private.key.store.p12  \
         -passout pass:"${LAB_PASSPHRASE}" \
         -CAfile ${LAB_OUT_FOLDER}/certificateAuthority.cert.pem
 }
