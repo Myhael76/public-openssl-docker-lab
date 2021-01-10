@@ -1,1 +1,5 @@
-unix/certificates/runs/*
+*.pem
+*.cer
+*.p12
+*.srl
+*.csr

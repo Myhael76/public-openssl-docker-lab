@@ -1,20 +1,17 @@
 # public-openssl-docker-lab
 
+## Objective 
 This project is an accelerator for use cases involving multiple server laboratories needed ad-hoc CA signed certificates for various purposes, including server authentication, client authentication, signing and non repudiation scenarios.
 
+## Quick start
+
 This is maintained with windows and docker desktop, but may be run easily in any docker environment.
+The main project is docker-compose based and is found in the folder openssl-code-autohoring-helper.
+It is sufficient to run the docker-compose project:
 
-The main project is docker-compose based and is found in the folder docker-compose.
+- run public-openssl-docker-lab\openssl-code-autohoring-helper\01.up.bat 
+- run public-openssl-docker-lab\openssl-code-autohoring-helper\08.shell.bat
+- in the new shell, run /lab_bin/manageAllSubjects.sh
 
-It is sufficient to run the project.
-
-Configuration about what certificates to generate is found in unix/certificates/config folder.
-
-Declare a custom passphrase and the list of servers in variables.sh.
-
-For each server declare the alternate names in the file /unix/certificates/config/server_${serverName}/altNames.config file.
-
-For the rest the code is very simple and the relative options are easily discoverable.
-
-Each "up" command spins up an alpine based openssl container, generates the certificates as configured and exits. At the moment the automatic exit is suspended for troubleshooting reasons, stop the project explictly.
+To generate new certificates generate nes "subject" folders in public-openssl-docker-lab\openssl-code-autohoring-helper\data\subjects according to the provided models, then repeat the procedure
 

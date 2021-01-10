@@ -1,0 +1,25 @@
+version: "3.5"
+
+volumes: 
+  runs: {}
+
+services:
+  openssl-code-authoring-helper:
+    build: ./build
+    image: openssl-helper
+    #stdin_open: true # docker run -i
+    tty: true        # docker run -t
+    container_name: openssl-code-authoring-helper
+    hostname: openssl-code-authoring-helper
+    volumes:
+      - ../unix/bin:/lab_bin/
+      - ./data/:/data/
+      - runs:/runs/
+    environment:
+      - LAB_BIN_FOLDER=/lab_bin
+      - LAB_DEBUG=1
+    # use entrypoint for unattended mode (not tested yet)
+    # entrypoint: /lab_bin/manageAllSubjects.sh
+    # start up with this command and run mannualy in a shell the above command for interractive passphrase input
+    command: tail -f /dev/null
+

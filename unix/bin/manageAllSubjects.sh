@@ -7,10 +7,11 @@ THIS_SCRIPT_HOME=$(dirname "$THIS_SCRIPT_START")
 
 
 ### "Import command library"
-. /root/certificates/commands.sh
+. ${LAB_BIN_FOLDER}/commands.sh
 
-generateAll
+manageAllSubjects
 
-echo "stopping for debug"
-
-tail -f /dev/null
+if [ ${LAB_DEBUG} -eq 1 ]; then
+    echo "stopping for debug"
+    tail -f /dev/null
+fi
