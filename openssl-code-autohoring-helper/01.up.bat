@@ -1,5 +1,3 @@
 @echo off
 
-docker-compose up
-
-pause
+docker-compose up -d

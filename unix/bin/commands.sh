@@ -49,7 +49,7 @@ genKeysForSubject(){
 
     if [ -z "${2}" ]; then
         logE "genKeysForSubject(): Must pass a passphrase in the second parameter"
-    else 
+    else
         if [ -f "${LAB_SUBJECTS_FOLDER}/${1}/out/private.encrypted.keypair.pem" ]; then
             logI "genKeysForSubject(): Subject folder ${LAB_SUBJECTS_FOLDER}/${1}/out already has a key pair"
         else
@@ -145,24 +145,38 @@ genCertForSubject(){
     fi
 }
 
+genKeyCertBundleForSubject(){
+    # params
+    # $1 - subject
+    logI "Generating key and certificate private bundle for subject ${1}"
+    cat \
+        "${LAB_SUBJECTS_FOLDER}/${1}/out/private.encrypted.keypair.pem" \
+        "${LAB_SUBJECTS_FOLDER}/${1}/out/public.pem.cer" \
+        > "${LAB_SUBJECTS_FOLDER}/${1}/out/private.encrypted.keypair.cert.bundle.pem"
+}
+
 generateP12PrivateKeyStoreForSubject(){
     # Note: 
     # for longer chains the -certfile must contain the full bundle up to the current certificate
     # excluding the one passed with -inkey
+    logI "Generate PKCS#12 key store without chain for subject ${1}..."
     openssl pkcs12 \
         -export \
-        -in ${LAB_SUBJECTS_FOLDER}/${1}/out/public.pem.cer \
-        -inkey ${LAB_SUBJECTS_FOLDER}/${1}/out/private.encrypted.keypair.pem \
+        -in "${LAB_SUBJECTS_FOLDER}/${1}/out/public.pem.cer" \
+        -inkey "${LAB_SUBJECTS_FOLDER}/${1}/out/private.encrypted.keypair.pem" \
         -passin pass:"${2}" \
-        -out ${LAB_SUBJECTS_FOLDER}/${1}/out/private.key.store.p12  \
+        -out "${LAB_SUBJECTS_FOLDER}/${1}/out/private.key.store.p12"  \
         -passout pass:"${2}" \
-        -CAfile ${LAB_SUBJECTS_FOLDER}/${3}/out/public.pem.cer
+        -CAfile "${LAB_SUBJECTS_FOLDER}/${3}/out/public.pem.cer"
+#        -passin pass:"${2}" \
+
 }
 
 generateP12PrivateKeyStoreWithChainForSubject(){
     # Note: 
     # for longer chains the -certfile must contain the full bundle up to the current certificate
     # excluding the one passed with -inkey
+    logI "Generate PKCS#12 key store with chain for subject ${1}..."
     openssl pkcs12 \
         -export \
         -in "${LAB_SUBJECTS_FOLDER}/${1}/out/public.pem.cer" \
@@ -170,12 +184,11 @@ generateP12PrivateKeyStoreWithChainForSubject(){
         -passin pass:"${2}" \
         -out "${LAB_SUBJECTS_FOLDER}/${1}/out/full.chain.key.store.p12"  \
         -passout pass:"${2}" \
-        -name serverCertificate \
+        -name "${LAB_KEY_STORE_ENTRY_NAME}" \
         -CAfile "${LAB_SUBJECTS_FOLDER}/${3}/out/public.crt.bundle.pem" \
-        -caname "Laboratory Authority" \
+        -caname "${LAB_ROOT_CA_NAME}" \
         -chain
 }
-
 
 sourceSubjectLocalVars(){
     logI "Sourcing file ${LAB_SUBJECTS_FOLDER}/${1}/set_env.sh"
@@ -254,6 +267,7 @@ manageSubject(){
             # check passphrase
             if [ -z "${LAB_PK_PASS}" ]; then
                 LAB_PK_PASS=$(getPKPassForSubjectFromMemStore "${1}")
+                logI "LAB_PK_PASS for subject ${1} recovered from memory cache"
             fi
             mkdir -p "${LAB_SUBJECTS_FOLDER}/${1}/out"
             if [ "${LAB_SUBJECT_TYPE}" == "RootCA" ]; then
@@ -263,6 +277,7 @@ manageSubject(){
                 genCsrForSubject "${1}" "${LAB_PK_PASS}"
                 logI "Managing PEM Certificate stores for subject ${1}"
                 genCertForSubject "${1}" "${LAB_PK_PASS}"
+                genKeyCertBundleForSubject "${1}"
                 logI "Managing PKCS12 Certificate stores for subject ${1}"
                 generateP12PrivateKeyStoreForSubject "${1}" "${LAB_PK_PASS}" "${LAB_SIGNING_CA_SUBJECT_DIR}"
                 generateP12PrivateKeyStoreWithChainForSubject "${1}" "${LAB_PK_PASS}" "${LAB_SIGNING_CA_SUBJECT_DIR}"
