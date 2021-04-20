@@ -176,18 +176,66 @@ generateP12PrivateKeyStoreWithChainForSubject(){
     # Note: 
     # for longer chains the -certfile must contain the full bundle up to the current certificate
     # excluding the one passed with -inkey
-    logI "Generate PKCS#12 key store with chain for subject ${1}..."
-    openssl pkcs12 \
-        -export \
-        -in "${LAB_SUBJECTS_FOLDER}/${1}/out/public.pem.cer" \
-        -inkey "${LAB_SUBJECTS_FOLDER}/${1}/out/private.encrypted.keypair.pem" \
-        -passin pass:"${2}" \
-        -out "${LAB_SUBJECTS_FOLDER}/${1}/out/full.chain.key.store.p12"  \
-        -passout pass:"${2}" \
-        -name "${LAB_KEY_STORE_ENTRY_NAME}" \
-        -CAfile "${LAB_SUBJECTS_FOLDER}/${3}/out/public.crt.bundle.pem" \
-        -caname "${LAB_ROOT_CA_NAME}" \
-        -chain
+    if [ -f "${LAB_SUBJECTS_FOLDER}/${1}/out/full.chain.key.store.p12" ];then
+        logI "PKCS#12 key store with chain for subject ${1} already exists, skipping"
+    else
+        logI "Generate PKCS#12 key store with chain for subject ${1}..."
+        openssl pkcs12 \
+            -export \
+            -in "${LAB_SUBJECTS_FOLDER}/${1}/out/public.pem.cer" \
+            -inkey "${LAB_SUBJECTS_FOLDER}/${1}/out/private.encrypted.keypair.pem" \
+            -passin pass:"${2}" \
+            -out "${LAB_SUBJECTS_FOLDER}/${1}/out/full.chain.key.store.p12"  \
+            -passout pass:"${2}" \
+            -name "${LAB_KEY_STORE_ENTRY_NAME}" \
+            -CAfile "${LAB_SUBJECTS_FOLDER}/${3}/out/public.crt.bundle.pem" \
+            -caname "${LAB_ROOT_CA_NAME}" \
+            -chain
+    fi
+}
+
+
+generateP12PublicStoreForSubject(){
+    if [ -f "${LAB_SUBJECTS_FOLDER}/${1}/out/public.trust.store.p12" ];then
+        logI "PKCS#12 trust store with chain for subject ${1} already exists, skipping"
+    else
+        openssl pkcs12 -export -nokeys \
+            -in "${LAB_SUBJECTS_FOLDER}/${1}/out/public.pem.cer" \
+            -passin pass:"${2}" \
+            -out "${LAB_SUBJECTS_FOLDER}/${1}/out/public.trust.store.p12" \
+            -passout pass:"${2}" \
+            -name "${LAB_KEY_STORE_ENTRY_NAME}"
+    fi
+}
+
+generateChainedJksForSubject(){
+    if [ ! -f "${LAB_SUBJECTS_FOLDER}/${1}/out/full.chain.key.store.jks" ]; then
+        logI "chain jks file not found, deducing from p12"
+        keytool -importkeystore \
+            -destkeystore "${LAB_SUBJECTS_FOLDER}/${1}/out/full.chain.key.store.jks" \
+            -srckeystore "${LAB_SUBJECTS_FOLDER}/${1}/out/full.chain.key.store.p12" \
+            -srcalias "${LAB_KEY_STORE_ENTRY_NAME}" \
+            -srcstoretype PKCS12 \
+            -destalias "${LAB_KEY_STORE_ENTRY_NAME}" \
+            -srcstorepass "${2}" \
+            -deststorepass "${2}"
+    else
+        logI "Subject $1 already has a jks keystore"
+    fi
+}
+
+generateSimpleTruststoreJksForSubject(){
+    if [ ! -f "${LAB_SUBJECTS_FOLDER}/${1}/out/simple.trust.store.jks" ]; then
+        logI "simple jks file not found, importing certificate"
+        keytool -import \
+            -keystore "${LAB_SUBJECTS_FOLDER}/${1}/out/simple.trust.store.jks" \
+            -file "${LAB_SUBJECTS_FOLDER}/${1}/out/public.pem.cer" \
+            -alias "${LAB_KEY_STORE_ENTRY_NAME}" \
+            -storepass "${2}" \
+            -noprompt
+    else
+        logI "Subject $1 already has a simple jks truststore"
+    fi  
 }
 
 sourceSubjectLocalVars(){
@@ -268,6 +316,11 @@ manageSubject(){
             if [ -z "${LAB_PK_PASS}" ]; then
                 LAB_PK_PASS=$(getPKPassForSubjectFromMemStore "${1}")
                 logI "LAB_PK_PASS for subject ${1} recovered from memory cache"
+            else
+                if [ ! -f "/dev/shm/certPasses/${1}/pass.tmp" ]; then
+                    mkdir -p "/dev/shm/certPasses/${1}"
+                    echo "${LAB_PK_PASS}" > "/dev/shm/certPasses/${1}/pass.tmp"
+                fi
             fi
             mkdir -p "${LAB_SUBJECTS_FOLDER}/${1}/out"
             if [ "${LAB_SUBJECT_TYPE}" == "RootCA" ]; then
@@ -281,7 +334,10 @@ manageSubject(){
                 logI "Managing PKCS12 Certificate stores for subject ${1}"
                 generateP12PrivateKeyStoreForSubject "${1}" "${LAB_PK_PASS}" "${LAB_SIGNING_CA_SUBJECT_DIR}"
                 generateP12PrivateKeyStoreWithChainForSubject "${1}" "${LAB_PK_PASS}" "${LAB_SIGNING_CA_SUBJECT_DIR}"
+                generateChainedJksForSubject "${1}" "${LAB_PK_PASS}"
             fi
+            generateSimpleTruststoreJksForSubject "${1}" "${LAB_PK_PASS}"
+            generateSimpleTruststoreJksForSubject "${1}" "${LAB_PK_PASS}"
             unsetSubjectLocals
         else
             logE "manageSubject(): Subject set_env.sh file missing, cannot manage this subject"
