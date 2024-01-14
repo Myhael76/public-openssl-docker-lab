@@ -288,15 +288,15 @@ generateP12PrivateKeyStoreWithChainForSubject(){
 
     # validations
     local validationErrors=0
-    if [ ! -f "${LAB_SUBJECTS_FOLDER}/${3}/out/public.crt.bundle.pem"]; then
+    if [ ! -f "${LAB_SUBJECTS_FOLDER}/${3}/out/public.crt.bundle.pem" ]; then
         logE "generateP12PrivateKeyStoreWithChainForSubject(): CA bundle file not found: ${LAB_SUBJECTS_FOLDER}/${3}/out/public.crt.bundle.pem"
         validationErrors=$((i+validationErrors))
     fi
-    if [ ! -f "${LAB_SUBJECTS_FOLDER}/${1}/out/public.pem.cer"]; then
+    if [ ! -f "${LAB_SUBJECTS_FOLDER}/${1}/out/public.pem.cer" ]; then
         logE "generateP12PrivateKeyStoreWithChainForSubject(): Public certificate file not found: ${LAB_SUBJECTS_FOLDER}/${1}/out/public.pem.cer"
         validationErrors=$((i+validationErrors))
     fi
-    if [ ! -f "${LAB_SUBJECTS_FOLDER}/${1}/out/private.encrypted.keypair.pem"]; then
+    if [ ! -f "${LAB_SUBJECTS_FOLDER}/${1}/out/private.encrypted.keypair.pem" ]; then
         logE "generateP12PrivateKeyStoreWithChainForSubject(): Private keypair file not found: ${LAB_SUBJECTS_FOLDER}/${1}/out/private.encrypted.keypair.pem"
         validationErrors=$((i+validationErrors))
     fi
